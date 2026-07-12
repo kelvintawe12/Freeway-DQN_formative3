@@ -6,7 +6,7 @@ This document is the source of truth for the hyperparameter tuning requirement: 
 python train.py --preset <run_id> --notes "your observation after the run"
 ```
 
-The `mean_reward` and `notes` columns below are filled in once results exist in `experiments/experiment_log.csv`. This file is the narrative version of that log: readable in a presentation, with the reasoning behind each run stated up front rather than reconstructed afterward.
+The metric and `notes` columns below are filled in once results exist in `experiments/experiment_log.csv`. This file is the narrative version of that log: readable in a presentation, with the reasoning behind each run stated up front rather than reconstructed afterward. Read the "How to read the results" section below before deciding which numbers to record — on Freeway, final greedy reward is the wrong headline.
 
 Member names are placeholders (`member1`, `member2`, `member3`) until the group assigns real names. Update the `member` field in each relevant preset in `config.py`, and the header of each section below, once that is decided.
 
@@ -49,6 +49,32 @@ Once the sweep identifies each member's best value, the **baseline** and **final
 
 ---
 
+## How to read the results: why "final mean reward" is the wrong headline
+
+Freeway is a trap for the obvious metric. A chicken that simply holds "up" already scores ~20, and the greedy (`deterministic=True`), fixed-seed evaluation replays almost the same trajectory no matter what the network learned. In our own runs, `learning_rate=1e-6` and `learning_rate=1e-4` produced **byte-identical** greedy eval rewards (23.30, 22.20, 22.10, 22.40) for the first 100k steps despite a 100× difference in step size. If you rank the 30 experiments by final greedy reward, almost all of them tie at ~22 and the sweep has no story.
+
+The rising `ep_rew_mean` you see during training is mostly **epsilon decaying** (fewer random downward moves), not the value network improving. So the plateau reward is real, but it is nearly the same for every config that trains at all.
+
+What actually separates configurations is **how the reward is earned**, not its final value. Each run now logs these to `experiment_log.csv` (computed in `train.py`; no extra training):
+
+| Column | Meaning | Better = |
+|---|---|---|
+| `steps_to_threshold` | first eval timestep reaching mean reward ≥ 18 (see `reward_threshold`) | **lower** — faster to competence |
+| `auc_reward` | mean of all eval means over training (area under the reward curve) | **higher** — better sample efficiency |
+| `late_reward_std` | std of the last ≤5 eval means | **lower** — more stable once settled |
+| `stochastic_mean_reward` | non-greedy eval, where the learned action *distribution* matters | higher, and it *varies* between configs |
+| `mean_reward` vs `final_mean_reward` | best checkpoint vs end-of-training weights | a large gap flags instability |
+
+**How to frame each sweep in the presentation:**
+
+- **Learning rate (Member 1):** rank by `steps_to_threshold` and `auc_reward`, not final reward. The story is "how fast, and how stably" — the too-high rates (1e-2, 3e-3) should show high `late_reward_std` or a big `mean_reward` vs `final_mean_reward` gap (they reach a peak then diverge), which is exactly the instability the extreme runs exist to demonstrate.
+- **Gamma / batch size (Member 2):** gamma's effect is behavioral — read it off the gameplay video (patient gap-waiting vs rushing) plus `auc_reward`. Batch size is a stability-vs-compute story: pair `late_reward_std` with `wall_clock_seconds`.
+- **Exploration (Member 3):** `steps_to_threshold` shows the explore/exploit tradeoff directly — fast-decay commits early (low steps, possibly higher `late_reward_std` if it settled wrong), slow-decay wastes budget exploring (high steps). The deliberately-broken `zerofloor` and `alwaysexplore` runs are the contrast cases; keep them.
+
+The deliberately-extreme runs are your clearest evidence precisely because they *break* these metrics while the middle of each range looks flat. Report a documented failure as understanding, not as a gap.
+
+---
+
 ## Shared baseline
 
 Every axis below is measured as a deviation from this one reference run.
@@ -83,7 +109,7 @@ for preset in m1_lr_01_tiny m1_lr_02_verylow m1_lr_03_low m1_lr_04_baseline \
 done
 ```
 
-| Run ID | Learning Rate | Predicted Behavior | Mean Reward | Actual Observed Behavior |
+| Run ID | Learning Rate | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
 | m1_lr_01_tiny | 1e-6 | Learning barely happens, reward stays near random | | |
 | m1_lr_02_verylow | 1e-5 | Slow but stable, likely still improving at end of budget | | |
@@ -119,7 +145,7 @@ done
 
 ### Gamma (discount factor)
 
-| Run ID | Gamma | Predicted Behavior | Mean Reward | Actual Observed Behavior |
+| Run ID | Gamma | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
 | m2_gamma_01_short | 0.90 | Short-sighted, may cross without waiting for a safe gap | | |
 | m2_gamma_02_shortmed | 0.95 | Still fairly reactive | | |
@@ -129,7 +155,7 @@ done
 
 ### Batch size
 
-| Run ID | Batch Size | Predicted Behavior | Mean Reward | Actual Observed Behavior |
+| Run ID | Batch Size | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
 | m2_batch_01_small | 8 | Noisy gradients, more updates per second, less stable | | |
 | m2_batch_02_baseline | 32 | Reference point, same as shared baseline's batch size | | |
@@ -156,7 +182,7 @@ for preset in m3_eps_01_fastdecay m3_eps_02_baseline m3_eps_03_slowdecay \
 done
 ```
 
-| Run ID | Eps Start | Eps End | Decay Fraction | Predicted Behavior | Mean Reward | Actual Observed Behavior |
+| Run ID | Eps Start | Eps End | Decay Fraction | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|---|---|
 | m3_eps_01_fastdecay | 1.0 | 0.05 | 0.02 | Exploits early, risks settling on a suboptimal policy before seeing enough traffic patterns | | |
 | m3_eps_02_baseline | 1.0 | 0.05 | 0.10 | Reference point, same as shared baseline's exploration schedule | | |

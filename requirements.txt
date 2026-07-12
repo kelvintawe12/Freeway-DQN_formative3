@@ -1,12 +1,16 @@
-stable-baselines3[extra]==2.3.2
-gymnasium[atari,accept-rom-license]==0.29.1
-ale-py==0.8.1
-shimmy[atari]==1.3.0
-matplotlib==3.8.4
-numpy==1.26.4
+# Pinned to the stack that actually runs on Colab (confirmed working:
+# ale-py 0.12.0, Python 3.12, CUDA). ale-py >=0.9 bundles the Atari ROMs
+# inside the wheel, so there is no AutoROM / accept-rom-license step and no
+# shimmy dependency any more — ale-py registers ALE/* envs with Gymnasium
+# directly (see config.py, which calls gym.register_envs(ale_py) once).
+stable-baselines3[extra]==2.9.0
+gymnasium[atari]==1.1.1
+ale-py==0.12.0
+matplotlib==3.9.2
+numpy==2.1.3
 moviepy==1.0.3
-imageio==2.34.0
-imageio-ffmpeg==0.4.9
-opencv-python-headless==4.9.0.80
-tensorboard==2.16.2
-pandas==2.2.2
+imageio==2.36.0
+imageio-ffmpeg==0.5.1
+opencv-python-headless==4.10.0.84
+tensorboard==2.18.0
+pandas==2.2.3
