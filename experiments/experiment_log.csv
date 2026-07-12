@@ -1,1 +1,13 @@
-run_id,member,policy,env_id,n_envs,n_stack,seed,total_timesteps,learning_rate,gamma,batch_size,buffer_size,learning_starts,target_update_interval,train_freq,gradient_steps,exploration_initial_eps,exploration_final_eps,exploration_fraction,eval_freq,n_eval_episodes,reward_threshold,mean_reward,std_reward,final_mean_reward,final_std_reward,stochastic_mean_reward,stochastic_std_reward,steps_to_threshold,auc_reward,late_reward_std,wall_clock_seconds,notes
+run_id,member,policy,env_id,n_envs,n_stack,seed,total_timesteps,learning_rate,gamma,batch_size,buffer_size,learning_starts,target_update_interval,train_freq,gradient_steps,exploration_initial_eps,exploration_final_eps,exploration_fraction,eval_freq,n_eval_episodes,mean_reward,std_reward,wall_clock_seconds,notes
+smoke_test,dev,CnnPolicy,ALE/Freeway-v5,4,4,42,2000,0.0001,0.99,32,2000,200,1000,4,1,1.0,0.05,0.1,1000,2,21.0,1.0,25.6,"smoke test, not a real experiment"
+baseline,team,CnnPolicy,ALE/Freeway-v5,4,4,42,500000,0.0001,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.9,0.943,3366.8,shared reference point for all three sweeps
+m1_lr_01_tiny,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,1e-06,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,970.7,TODO: fill in after run
+m1_lr_02_verylow,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,1e-05,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,0.1,0.3,992.6,TODO: fill in after run
+m1_lr_03_low,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,5e-05,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,20.7,1.1,999.6,TODO: fill in after run
+m1_lr_04_baseline,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.0001,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.8,1.536,1027.3,TODO: fill in after run
+m1_lr_05_modhigh,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.0003,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,1053.9,TODO: fill in after run
+m1_lr_06_high,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.0005,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,1001.1,TODO: fill in after run
+m1_lr_07_veryhigh,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.001,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,1066.1,TODO: fill in after run
+m1_lr_08_extreme,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.003,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,1048.7,TODO: fill in after run
+m1_lr_09_extreme2,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,0.01,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,21.7,1.345,1010.8,TODO: fill in after run
+m1_lr_10_lowfixed,member1,CnnPolicy,ALE/Freeway-v5,4,4,42,150000,3e-05,0.99,32,100000,10000,1000,4,1,1.0,0.05,0.1,25000,10,19.7,1.269,1020.7,TODO: fill in after run
