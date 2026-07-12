@@ -34,11 +34,21 @@ except ImportError:
 
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(PROJECT_ROOT, "models")
-LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
-PLOTS_DIR = os.path.join(PROJECT_ROOT, "plots")
-VIDEOS_DIR = os.path.join(PROJECT_ROOT, "videos")
-EXPERIMENTS_DIR = os.path.join(PROJECT_ROOT, "experiments")
+
+# Where run artifacts (models, logs, plots, videos, the experiment log) are
+# written. Defaults to the repo itself, so local runs behave exactly as
+# before. On Colab, set FREEWAY_OUTPUT_ROOT to a mounted Google Drive folder
+# (e.g. /content/drive/MyDrive/Freeway-DQN) and every script writes straight
+# to Drive as it runs: nothing to download, and a disconnect mid-sweep still
+# leaves every completed run's files safe on Drive. Nothing to remember to
+# zip, and no way to pull down the models but forget the logs.
+OUTPUT_ROOT = os.environ.get("FREEWAY_OUTPUT_ROOT", PROJECT_ROOT)
+
+MODELS_DIR = os.path.join(OUTPUT_ROOT, "models")
+LOGS_DIR = os.path.join(OUTPUT_ROOT, "logs")
+PLOTS_DIR = os.path.join(OUTPUT_ROOT, "plots")
+VIDEOS_DIR = os.path.join(OUTPUT_ROOT, "videos")
+EXPERIMENTS_DIR = os.path.join(OUTPUT_ROOT, "experiments")
 EXPERIMENT_LOG_CSV = os.path.join(EXPERIMENTS_DIR, "experiment_log.csv")
 
 ENV_ID = "ALE/Freeway-v5"
