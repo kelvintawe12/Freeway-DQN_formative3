@@ -12,6 +12,26 @@ from __future__ import annotations
 import os
 from dataclasses import asdict, dataclass, field
 
+# Register the ALE/* environments with Gymnasium exactly once, here, in the
+# module every script imports. ale-py >=0.9 ships the ROMs in the wheel but
+# does not auto-register with Gymnasium, so make_atari_env / gym.make on
+# "ALE/Freeway-v5" fails with a "namespace ALE not found" error unless this
+# runs first. Putting it in config.py means train.py, evaluate.py, play.py,
+# and compare_policies.py all get it for free via their `from config import`
+# line — no per-file import, no runtime source patching in the notebook.
+#
+# Guarded so config.py stays importable on a machine without the training
+# stack installed (local editing, check_presets.py): the preset table and
+# paths do not need ALE, only the scripts that actually build an env do, and
+# those run where ale-py is present.
+try:
+    import ale_py
+    import gymnasium as gym
+
+    gym.register_envs(ale_py)
+except ImportError:
+    pass
+
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(PROJECT_ROOT, "models")
@@ -63,6 +83,11 @@ class DQNConfig:
 
     eval_freq: int = 25_000
     n_eval_episodes: int = 10
+    # Reward a run must reach to count as "competent", used by the
+    # sample-efficiency metric (steps_to_threshold). Set a little below the
+    # ~22 plateau a trained Freeway agent reaches, so a config's speed to
+    # near-competence is what varies, not whether it ever gets there.
+    reward_threshold: float = 18.0
 
     def run_dir(self) -> str:
         return os.path.join(LOGS_DIR, self.run_id)
