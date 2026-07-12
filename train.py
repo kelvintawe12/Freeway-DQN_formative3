@@ -23,6 +23,7 @@ import os
 import time
 from dataclasses import fields
 
+import numpy as np
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_atari_env
@@ -70,9 +71,55 @@ def build_eval_env(cfg: DQNConfig):
     return env
 
 
+def curve_metrics(run_dir: str, threshold: float) -> dict:
+    """
+    Derive sample-efficiency and stability metrics from the learning curve
+    EvalCallback already wrote to run_dir/evaluations.npz.
+
+    On Freeway the final greedy eval reward barely separates configurations
+    (a chicken that mostly holds "up" already scores ~20, and a fixed-seed
+    deterministic eval produces near-identical trajectories regardless of
+    learning rate). What *does* separate them is how the reward gets there:
+
+      steps_to_threshold  first eval timestep whose mean reward >= threshold,
+                          i.e. how fast the config becomes competent. Lower is
+                          better; NaN means it never crossed the bar.
+      auc_reward          mean of all eval means over training, a single number
+                          for "area under the reward curve" / overall efficiency.
+      late_reward_std     std of the last few eval means, i.e. how stable the
+                          policy is once it has settled. High values flag the
+                          oscillation the high-learning-rate runs are meant to
+                          show.
+
+    Returns NaNs if the file is missing (e.g. training never reached one
+    eval), so a row is still written rather than crashing the run.
+    """
+    npz = os.path.join(run_dir, "evaluations.npz")
+    if not os.path.isfile(npz):
+        return {"steps_to_threshold": float("nan"),
+                "auc_reward": float("nan"),
+                "late_reward_std": float("nan")}
+
+    data = np.load(npz)
+    timesteps = data["timesteps"]
+    per_eval_mean = data["results"].mean(axis=1)  # results: (n_evals, n_episodes)
+
+    crossed = np.where(per_eval_mean >= threshold)[0]
+    steps_to_threshold = float(timesteps[crossed[0]]) if len(crossed) else float("nan")
+
+    tail = per_eval_mean[-min(5, len(per_eval_mean)):]
+    return {
+        "steps_to_threshold": steps_to_threshold,
+        "auc_reward": float(per_eval_mean.mean()),
+        "late_reward_std": float(tail.std()),
+    }
+
+
 def append_to_experiment_log(cfg: DQNConfig, mean_reward: float, std_reward: float,
                               final_mean_reward: float, final_std_reward: float,
-                              wall_clock_seconds: float, notes: str) -> None:
+                              stochastic_mean: float, stochastic_std: float,
+                              metrics: dict, wall_clock_seconds: float,
+                              notes: str) -> None:
     """
     Append one row to the shared experiment log.
 
@@ -81,18 +128,25 @@ def append_to_experiment_log(cfg: DQNConfig, mean_reward: float, std_reward: flo
     right before a deadline. Every run, from every group member, lands in
     the same file.
 
-    `mean_reward`/`std_reward` describe the best checkpoint EvalCallback
-    kept during training, which is the number you should quote. The
-    separate `final_*` columns describe the weights at the end of training.
-    The two diverge exactly when a run is unstable (high learning rate,
-    zero exploration floor), so keeping both makes that instability
-    visible in the log instead of hidden behind a single misleading value.
+    Reward columns, and why there are several:
+      mean_reward/std_reward      best checkpoint, greedy (deterministic) eval
+      final_mean/final_std        end-of-training weights, greedy eval
+      stochastic_mean/std         best checkpoint, sampled (non-greedy) eval
+    Greedy eval on Freeway is nearly degenerate across configs; the
+    stochastic pass and the curve metrics (steps_to_threshold, auc_reward,
+    late_reward_std) are what actually separate one hyperparameter setting
+    from another. See curve_metrics() and EXPERIMENTS.md for how to read them.
     """
     row = cfg.to_dict()
     row["mean_reward"] = round(mean_reward, 3)
     row["std_reward"] = round(std_reward, 3)
     row["final_mean_reward"] = round(final_mean_reward, 3)
     row["final_std_reward"] = round(final_std_reward, 3)
+    row["stochastic_mean_reward"] = round(stochastic_mean, 3)
+    row["stochastic_std_reward"] = round(stochastic_std, 3)
+    row["steps_to_threshold"] = round(metrics["steps_to_threshold"], 1)
+    row["auc_reward"] = round(metrics["auc_reward"], 3)
+    row["late_reward_std"] = round(metrics["late_reward_std"], 3)
     row["wall_clock_seconds"] = round(wall_clock_seconds, 1)
     row["notes"] = notes
 
@@ -247,10 +301,27 @@ def main() -> None:
         model_to_save.save(promoted_path)
         print(f"Promoted this run to {promoted_path} (used by play.py default)")
 
+    # Stochastic (non-greedy) eval of the model we kept. Greedy eval on
+    # Freeway is near-degenerate across configs (see curve_metrics), so this
+    # sampled pass, where the learned action *distribution* matters, gives a
+    # reward number that can actually differ between hyperparameter settings.
+    stochastic_mean, stochastic_std = evaluate_policy(
+        model_to_save, eval_env, n_eval_episodes=cfg.n_eval_episodes,
+        deterministic=False,
+    )
+
+    # Sample-efficiency / stability metrics from the learning curve.
+    metrics = curve_metrics(cfg.run_dir(), cfg.reward_threshold)
+
     append_to_experiment_log(cfg, best_mean, best_std, final_mean, final_std,
+                             stochastic_mean, stochastic_std, metrics,
                              elapsed, notes)
     print(f"Run '{cfg.run_id}' finished: mean_reward={best_mean:.2f} "
-          f"std_reward={best_std:.2f} (final_mean={final_mean:.2f}) "
+          f"std_reward={best_std:.2f} (final_mean={final_mean:.2f}, "
+          f"stochastic={stochastic_mean:.2f}) | "
+          f"steps_to_{cfg.reward_threshold:g}={metrics['steps_to_threshold']} "
+          f"auc={metrics['auc_reward']:.2f} "
+          f"late_std={metrics['late_reward_std']:.3f} "
           f"wall_clock={elapsed:.1f}s")
 
     train_env.close()
