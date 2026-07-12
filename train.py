@@ -71,6 +71,7 @@ def build_eval_env(cfg: DQNConfig):
 
 
 def append_to_experiment_log(cfg: DQNConfig, mean_reward: float, std_reward: float,
+                              final_mean_reward: float, final_std_reward: float,
                               wall_clock_seconds: float, notes: str) -> None:
     """
     Append one row to the shared experiment log.
@@ -79,10 +80,19 @@ def append_to_experiment_log(cfg: DQNConfig, mean_reward: float, std_reward: flo
     get merged later, because merging always introduces silent mistakes
     right before a deadline. Every run, from every group member, lands in
     the same file.
+
+    `mean_reward`/`std_reward` describe the best checkpoint EvalCallback
+    kept during training, which is the number you should quote. The
+    separate `final_*` columns describe the weights at the end of training.
+    The two diverge exactly when a run is unstable (high learning rate,
+    zero exploration floor), so keeping both makes that instability
+    visible in the log instead of hidden behind a single misleading value.
     """
     row = cfg.to_dict()
     row["mean_reward"] = round(mean_reward, 3)
     row["std_reward"] = round(std_reward, 3)
+    row["final_mean_reward"] = round(final_mean_reward, 3)
+    row["final_std_reward"] = round(final_std_reward, 3)
     row["wall_clock_seconds"] = round(wall_clock_seconds, 1)
     row["notes"] = notes
 
@@ -201,24 +211,47 @@ def main() -> None:
                 tb_log_name=cfg.run_id, progress_bar=True)
     elapsed = time.time() - start
 
-    model.save(cfg.model_path())
-    print(f"Saved model to {cfg.model_path()}")
-
-    if promote:
-        promoted_path = os.path.join(MODELS_DIR, "dqn_model.zip")
-        model.save(promoted_path)
-        print(f"Promoted this run to {promoted_path} (used by play.py default)")
-
-    # EvalCallback tracks the best mean reward seen during training but not
-    # its standard deviation. Running one final evaluation pass here gives
-    # the log both numbers together, computed the same way every time.
+    # Evaluate the weights as they stand at the end of training. For an
+    # unstable run this can be well below the best point ever reached, so
+    # it is reported but never the one we save or promote.
     final_mean, final_std = evaluate_policy(
         model, eval_env, n_eval_episodes=cfg.n_eval_episodes, deterministic=True
     )
 
-    append_to_experiment_log(cfg, final_mean, final_std, elapsed, notes)
-    print(f"Run '{cfg.run_id}' finished: mean_reward={final_mean:.2f} "
-          f"std_reward={final_std:.2f} wall_clock={elapsed:.1f}s")
+    # EvalCallback wrote the best checkpoint it saw to run_dir/best_model.zip.
+    # Prefer that over the final weights: it is the model that actually earned
+    # this run's headline number. Fall back to the final weights only if the
+    # callback never triggered (e.g. total_timesteps < eval_freq, as in the
+    # smoke test), so a tiny run still produces a usable model and log row.
+    best_ckpt = os.path.join(cfg.run_dir(), "best_model.zip")
+    if os.path.isfile(best_ckpt):
+        best_model = DQN.load(best_ckpt, env=eval_env)
+        best_mean, best_std = evaluate_policy(
+            best_model, eval_env, n_eval_episodes=cfg.n_eval_episodes,
+            deterministic=True,
+        )
+        model_to_save = best_model
+        print(f"Using best checkpoint from {best_ckpt} "
+              f"(best mean_reward={best_mean:.2f} vs final={final_mean:.2f})")
+    else:
+        best_mean, best_std = final_mean, final_std
+        model_to_save = model
+        print("No best_model.zip from EvalCallback (training shorter than "
+              "eval_freq?); logging and saving the final weights instead.")
+
+    model_to_save.save(cfg.model_path())
+    print(f"Saved model to {cfg.model_path()}")
+
+    if promote:
+        promoted_path = os.path.join(MODELS_DIR, "dqn_model.zip")
+        model_to_save.save(promoted_path)
+        print(f"Promoted this run to {promoted_path} (used by play.py default)")
+
+    append_to_experiment_log(cfg, best_mean, best_std, final_mean, final_std,
+                             elapsed, notes)
+    print(f"Run '{cfg.run_id}' finished: mean_reward={best_mean:.2f} "
+          f"std_reward={best_std:.2f} (final_mean={final_mean:.2f}) "
+          f"wall_clock={elapsed:.1f}s")
 
     train_env.close()
     eval_env.close()

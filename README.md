@@ -113,7 +113,9 @@ Any explicit flag overrides the preset's value for that field, so a preset can s
 python train.py --preset m1_lr_02_verylow --total-timesteps 300000 --notes "shorter budget test"
 ```
 
-The full list of all thirty runs, the reasoning behind each one, and predicted-versus-actual behavior columns to fill in live in **[EXPERIMENTS.md](EXPERIMENTS.md)**. That document and the `PRESETS` dictionary in `config.py` must stay in sync; if a value changes in one, change it in the other.
+The full list of all thirty runs, the reasoning behind each one, and predicted-versus-actual behavior columns to fill in live in **[EXPERIMENTS.md](EXPERIMENTS.md)**. That document and the `PRESETS` dictionary in `config.py` must stay in sync; if a value changes in one, change it in the other. Run `python check_presets.py` to verify they still agree — it exits non-zero and prints the specific mismatch if they have drifted.
+
+**Compute budget:** the 500k-timestep default × 33 runs does not fit in a Colab session. The sweep runs at a reduced `--total-timesteps 150000`, reserving the full 500k for the baseline and the final combined run. See the "Compute budget" section of [EXPERIMENTS.md](EXPERIMENTS.md) for the full breakdown.
 
 `member1`, `member2`, `member3` are placeholders in both the presets and the documentation. Replace them with actual names once the group assigns who owns which sweep, in `config.py` and in `EXPERIMENTS.md`.
 
