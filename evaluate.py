@@ -46,14 +46,21 @@ def main() -> None:
 
     model = DQN.load(args.model, env=env)
 
-    mean_reward, std_reward = evaluate_policy(
+    # Report both eval modes. Greedy (deterministic) is the headline number,
+    # but on Freeway it barely varies between models; the stochastic pass,
+    # where the learned action distribution matters, is what actually
+    # distinguishes a well-trained agent from a mediocre one here.
+    greedy_mean, greedy_std = evaluate_policy(
         model, env, n_eval_episodes=args.episodes, deterministic=True
+    )
+    stochastic_mean, stochastic_std = evaluate_policy(
+        model, env, n_eval_episodes=args.episodes, deterministic=False
     )
 
     print(f"Model: {args.model}")
     print(f"Episodes: {args.episodes}")
-    print(f"Mean reward: {mean_reward:.3f}")
-    print(f"Std reward:  {std_reward:.3f}")
+    print(f"Greedy     mean reward: {greedy_mean:.3f} +/- {greedy_std:.3f}")
+    print(f"Stochastic mean reward: {stochastic_mean:.3f} +/- {stochastic_std:.3f}")
 
     env.close()
 
