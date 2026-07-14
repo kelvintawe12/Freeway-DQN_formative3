@@ -134,20 +134,20 @@ def best_model_path() -> str:
 
 PRESETS: dict[str, dict] = {
     # --- Member 1: learning rate -------------------------------------
-    "m1_lr_01_tiny":      {"run_id": "m1_lr_01_tiny",      "member": "member1", "learning_rate": 1e-6},
-    "m1_lr_02_verylow":   {"run_id": "m1_lr_02_verylow",   "member": "member1", "learning_rate": 1e-5},
-    "m1_lr_03_low":       {"run_id": "m1_lr_03_low",       "member": "member1", "learning_rate": 5e-5},
-    "m1_lr_04_baseline":  {"run_id": "m1_lr_04_baseline",  "member": "member1", "learning_rate": 1e-4},
-    "m1_lr_05_modhigh":   {"run_id": "m1_lr_05_modhigh",   "member": "member1", "learning_rate": 3e-4},
-    "m1_lr_06_high":      {"run_id": "m1_lr_06_high",      "member": "member1", "learning_rate": 5e-4},
-    "m1_lr_07_veryhigh":  {"run_id": "m1_lr_07_veryhigh",  "member": "member1", "learning_rate": 1e-3},
-    "m1_lr_08_extreme":   {"run_id": "m1_lr_08_extreme",   "member": "member1", "learning_rate": 3e-3},
-    "m1_lr_09_extreme2":  {"run_id": "m1_lr_09_extreme2",  "member": "member1", "learning_rate": 1e-2},
+    "m1_lr_01_tiny":      {"run_id": "m1_lr_01_tiny",      "member": "Kelvin", "learning_rate": 1e-6},
+    "m1_lr_02_verylow":   {"run_id": "m1_lr_02_verylow",   "member": "Kelvin", "learning_rate": 1e-5},
+    "m1_lr_03_low":       {"run_id": "m1_lr_03_low",       "member": "Kelvin", "learning_rate": 5e-5},
+    "m1_lr_04_baseline":  {"run_id": "m1_lr_04_baseline",  "member": "Kelvin", "learning_rate": 1e-4},
+    "m1_lr_05_modhigh":   {"run_id": "m1_lr_05_modhigh",   "member": "Kelvin", "learning_rate": 3e-4},
+    "m1_lr_06_high":      {"run_id": "m1_lr_06_high",      "member": "Kelvin", "learning_rate": 5e-4},
+    "m1_lr_07_veryhigh":  {"run_id": "m1_lr_07_veryhigh",  "member": "Kelvin", "learning_rate": 1e-3},
+    "m1_lr_08_extreme":   {"run_id": "m1_lr_08_extreme",   "member": "Kelvin", "learning_rate": 3e-3},
+    "m1_lr_09_extreme2":  {"run_id": "m1_lr_09_extreme2",  "member": "Kelvin", "learning_rate": 1e-2},
     # Fixed-schedule stand-in: SB3's DQN learning_rate accepts a float only
     # through this CLI, so the "schedule" experiment uses a low fixed rate
     # as a proxy for the late-training portion of a decayed schedule. Note
     # this honestly in the writeup rather than claiming a true schedule ran.
-    "m1_lr_10_lowfixed":  {"run_id": "m1_lr_10_lowfixed",  "member": "member1", "learning_rate": 3e-5},
+    "m1_lr_10_lowfixed":  {"run_id": "m1_lr_10_lowfixed",  "member": "Kelvin", "learning_rate": 3e-5},
 
     # --- Member 2: gamma ------------------------------------------------
     "m2_gamma_01_short":     {"run_id": "m2_gamma_01_short",     "member": "Samuel Mwania", "gamma": 0.90},

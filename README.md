@@ -22,7 +22,9 @@ Freeway-DQN/
 ├── experiments/
 │   └── experiment_log.csv   one row per training run, appended automatically
 ├── notebooks/
-│   └── Freeway_DQN_Colab.ipynb
+│   ├── Freeway_DQN_Colab.ipynb       shared runner notebook
+│   ├── M1_Learning_Rate_Experiments.ipynb   Kelvin's learning-rate sweep
+│   └── Samuel_Mwania_Experiments.ipynb      gamma and batch-size sweep
 ├── models/                  saved .zip checkpoints (created at runtime)
 ├── logs/                    TensorBoard logs, one folder per run (created at runtime)
 ├── plots/                   reward curves and comparison charts (created at runtime)
@@ -117,21 +119,21 @@ The full list of all thirty runs, the reasoning behind each one, and predicted-v
 
 **Compute budget:** the 500k-timestep default × 33 runs does not fit in a Colab session. The sweep runs at a reduced `--total-timesteps 150000`, reserving the full 500k for the baseline and the final combined run. See the "Compute budget" section of [EXPERIMENTS.md](EXPERIMENTS.md) for the full breakdown.
 
-`member1` and `Birasa` are placeholders in both the presets and the documentation. Replace them with actual names once the group assigns who owns which sweep, in `config.py` and in `EXPERIMENTS.md`.
+`Kelvin`, `Samuel Mwania`, and `Birasa` are the assigned member names in the presets and documentation. Update them in `config.py` and `EXPERIMENTS.md` if the group assignments change.
 
 Every run, regardless of whether it came from a preset or manual flags, appends one row to `experiments/experiment_log.csv` automatically.
 
 ## Gameplay video
 
-`videos/freeway_before_training.mp4`: a random policy, included for contrast.
-`videos/freeway_after_training.mp4`: the trained agent, produced by `play.py --record`.
+`videos/freeway_samuel_mwania-step-0-to-step-20000.mp4`: the trained M2 agent, produced by `play.py --record` in the Samuel Mwania notebook.
+`videos/m1_lr_best-step-0-to-step-20000.mp4`: the trained M1 learning-rate agent, produced by `play.py --record` in the M1 notebook.
 
 ## Contributions
 
 | Member | Scripts / components owned | Hyperparameter axis | Experiments run |
 |---|---|---|---|
-| member1 | | Learning rate | 10 |
-| Samuel Mwania | | Gamma and batch size | 10 |
+| Kelvin | `M1_Learning_Rate_Experiments.ipynb` | Learning rate | 10 |
+| Samuel Mwania | `Samuel_Mwania_Experiments.ipynb` | Gamma and batch size | 10 |
 | Birasa | | Exploration schedule | 10 |
 
-Replace `member1`/`Birasa` with real names once assigned, in this table, in `config.py`, and in `EXPERIMENTS.md`.
+Names are assigned in `config.py` and documented in `EXPERIMENTS.md`; update them there if they change.

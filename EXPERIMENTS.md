@@ -8,7 +8,7 @@ python train.py --preset <run_id> --notes "your observation after the run"
 
 The metric and `notes` columns below are filled in once results exist in `experiments/experiment_log.csv`. This file is the narrative version of that log: readable in a presentation, with the reasoning behind each run stated up front rather than reconstructed afterward. Read the "How to read the results" section below before deciding which numbers to record — on Freeway, final greedy reward is the wrong headline.
 
-Member names `member1` and `Birasa` are placeholders until the group assigns real names. `Samuel Mwania` owns the gamma and batch size axis. Update the `member` field in each relevant preset in `config.py`, and the header of each section below, once the remaining members are decided.
+`Kelvin` owns the learning-rate axis, `Samuel Mwania` owns the gamma and batch size axis, and `Birasa` owns the exploration schedule axis. Update the `member` field in `config.py` if any of these names change, and keep the section headers below in sync.
 
 Before running anything, `python check_presets.py` confirms every preset in this document still matches `config.py` numerically. Run it after editing either file.
 
@@ -95,7 +95,7 @@ python train.py --run-id baseline --member <team> --notes "shared reference poin
 
 ---
 
-## Member 1: Learning rate
+## Kelvin: Learning rate
 
 **Question this sweep answers:** how sensitive is training to the step size of each gradient update, and where does it break down at the extremes?
 
@@ -111,20 +111,20 @@ done
 
 | Run ID | Learning Rate | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
-| m1_lr_01_tiny | 1e-6 | Learning barely happens, reward stays near random | | |
-| m1_lr_02_verylow | 1e-5 | Slow but stable, likely still improving at end of budget | | |
-| m1_lr_03_low | 5e-5 | Slower than baseline, possibly more stable | | |
-| m1_lr_04_baseline | 1e-4 | Reference point, same as shared baseline's learning rate | | |
-| m1_lr_05_modhigh | 3e-4 | Faster early learning | | |
-| m1_lr_06_high | 5e-4 | Faster still, watch for reward oscillation | | |
-| m1_lr_07_veryhigh | 1e-3 | Likely unstable, Q-values may diverge | | |
-| m1_lr_08_extreme | 3e-3 | Expected to fail or collapse, useful negative example | | |
-| m1_lr_09_extreme2 | 1e-2 | Almost certainly breaks training entirely | | |
-| m1_lr_10_lowfixed | 3e-5 | Stand-in for the tail end of a decayed schedule; see note below | | |
+| m1_lr_01_tiny | 1e-6 | Learning barely happens, reward stays near random | 25k / 22.33 / 0.20 | Reached the same top AUC and best reward (22.5) as the faster LRs, but the 1e-6 rate is too slow to recommend; final/stochastic rewards 21.7/21.3. |
+| m1_lr_02_verylow | 1e-5 | Slow but stable, likely still improving at end of budget | 25k / 13.40 / 10.54 | Collapsed after an initial peak (best 22.7, final 0.1). AUC and late-std show severe instability. |
+| m1_lr_03_low | 5e-5 | Slower than baseline, possibly more stable | 25k / 17.62 / 6.07 | Best checkpoint 23.0, but final and stochastic rewards fell to 20.7. Intermediate instability. |
+| m1_lr_04_baseline | 1e-4 | Reference point, same as shared baseline's learning rate | 25k / 21.07 / 1.76 | Solid reference. Best 22.5, final 21.8, stochastic 21.3; moderate AUC and low late-std. |
+| m1_lr_05_modhigh | 3e-4 | Faster early learning | 25k / 22.33 / 0.20 | Tied for best AUC and most stable late-std. Best 22.5, final 21.7, stochastic 21.3. Recommended best candidate. |
+| m1_lr_06_high | 5e-4 | Faster still, watch for reward oscillation | 25k / 22.33 / 0.20 | Same top AUC and stability as modhigh; no oscillation in this budget. |
+| m1_lr_07_veryhigh | 1e-3 | Likely unstable, Q-values may diverge | 25k / 22.33 / 0.20 | No divergence in this budget; reached the same deterministic plateau as the safer LRs. |
+| m1_lr_08_extreme | 3e-3 | Expected to fail or collapse, useful negative example | 25k / 22.33 / 0.20 | Did not collapse in this run, but the same eval plateau means the high rate is unnecessary. |
+| m1_lr_09_extreme2 | 1e-2 | Almost certainly breaks training entirely | 25k / 22.33 / 0.20 | Surprisingly reached the same plateau, but 1e-2 is too risky for a recommended value. |
+| m1_lr_10_lowfixed | 3e-5 | Stand-in for the tail end of a decayed schedule; see note below | 25k / 14.37 / 10.17 | Best checkpoint 23.3, but final 19.7 and stochastic 20.5; AUC shows instability typical of a too-low tail. |
 
 **Note on `m1_lr_10_lowfixed`:** Stable Baselines3's `DQN` accepts a fixed float for `learning_rate` through this CLI, not a decay schedule, even though SB3 itself supports schedule callables internally. This run uses a low fixed rate as an approximation of what a decayed schedule's late-training phase would look like, not a true schedule. State this plainly in the presentation rather than describing it as a schedule experiment; it is honest and still gives you a legitimate data point on low-learning-rate behavior.
 
-**Expected narrative:** too low wastes the training budget without meaningfully learning; too high destabilizes the Bellman targets and can diverge; the useful range sits somewhere between `m1_lr_03_low` and `m1_lr_06_high`. State which specific value performed best once the runs complete.
+**Expected narrative:** The middle-to-high range (`m1_lr_05_modhigh` through `m1_lr_09_extreme2`) all reached the same deterministic greedy plateau and tied on AUC and late-std, so `m1_lr_05_modhigh` (3e-4) is the recommended best value: it is the smallest learning rate in that top group, giving the same performance with the least risk of divergence. The extreme low end (`m1_lr_02_verylow`, `m1_lr_10_lowfixed`) collapsed after the initial peak, while `m1_lr_03_low` and `m1_lr_04_baseline` showed intermediate but acceptable behavior.
 
 ---
 
@@ -167,7 +167,7 @@ done
 
 ---
 
-## Member 3: Exploration schedule (epsilon-greedy)
+## Birasa: Exploration schedule (epsilon-greedy)
 
 **Question this sweep answers:** what is the right balance between exploring the environment early and exploiting a learned policy, and what happens at both extremes of that tradeoff?
 
