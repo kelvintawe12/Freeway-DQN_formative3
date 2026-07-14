@@ -8,7 +8,7 @@ python train.py --preset <run_id> --notes "your observation after the run"
 
 The metric and `notes` columns below are filled in once results exist in `experiments/experiment_log.csv`. This file is the narrative version of that log: readable in a presentation, with the reasoning behind each run stated up front rather than reconstructed afterward. Read the "How to read the results" section below before deciding which numbers to record — on Freeway, final greedy reward is the wrong headline.
 
-Member names are placeholders (`member1`, `member2`, `Birasa`) until the group assigns real names. Update the `member` field in each relevant preset in `config.py`, and the header of each section below, once that is decided.
+Member names `member1` and `Birasa` are placeholders until the group assigns real names. `Samuel Mwania` owns the gamma and batch size axis. Update the `member` field in each relevant preset in `config.py`, and the header of each section below, once the remaining members are decided.
 
 Before running anything, `python check_presets.py` confirms every preset in this document still matches `config.py` numerically. Run it after editing either file.
 
@@ -128,7 +128,7 @@ done
 
 ---
 
-## Member 2: Gamma and batch size
+## Samuel Mwania: Gamma and batch size
 
 **Question this sweep answers:** how does the discount factor change the agent's willingness to wait for a safe gap versus rushing, and how does batch size trade off gradient noise against compute cost per update?
 

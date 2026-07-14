@@ -150,18 +150,18 @@ PRESETS: dict[str, dict] = {
     "m1_lr_10_lowfixed":  {"run_id": "m1_lr_10_lowfixed",  "member": "member1", "learning_rate": 3e-5},
 
     # --- Member 2: gamma ------------------------------------------------
-    "m2_gamma_01_short":     {"run_id": "m2_gamma_01_short",     "member": "member2", "gamma": 0.90},
-    "m2_gamma_02_shortmed":  {"run_id": "m2_gamma_02_shortmed",  "member": "member2", "gamma": 0.95},
-    "m2_gamma_03_baseline":  {"run_id": "m2_gamma_03_baseline",  "member": "member2", "gamma": 0.99},
-    "m2_gamma_04_long":      {"run_id": "m2_gamma_04_long",      "member": "member2", "gamma": 0.995},
-    "m2_gamma_05_verylong":  {"run_id": "m2_gamma_05_verylong",  "member": "member2", "gamma": 0.999},
+    "m2_gamma_01_short":     {"run_id": "m2_gamma_01_short",     "member": "Samuel Mwania", "gamma": 0.90},
+    "m2_gamma_02_shortmed":  {"run_id": "m2_gamma_02_shortmed",  "member": "Samuel Mwania", "gamma": 0.95},
+    "m2_gamma_03_baseline":  {"run_id": "m2_gamma_03_baseline",  "member": "Samuel Mwania", "gamma": 0.99},
+    "m2_gamma_04_long":      {"run_id": "m2_gamma_04_long",      "member": "Samuel Mwania", "gamma": 0.995},
+    "m2_gamma_05_verylong":  {"run_id": "m2_gamma_05_verylong",  "member": "Samuel Mwania", "gamma": 0.999},
 
     # --- Member 2: batch size --------------------------------------------
-    "m2_batch_01_small":      {"run_id": "m2_batch_01_small",      "member": "member2", "batch_size": 8},
-    "m2_batch_02_baseline":   {"run_id": "m2_batch_02_baseline",   "member": "member2", "batch_size": 32},
-    "m2_batch_03_mod":        {"run_id": "m2_batch_03_mod",        "member": "member2", "batch_size": 64},
-    "m2_batch_04_large":      {"run_id": "m2_batch_04_large",      "member": "member2", "batch_size": 128},
-    "m2_batch_05_verylarge":  {"run_id": "m2_batch_05_verylarge",  "member": "member2", "batch_size": 256},
+    "m2_batch_01_small":      {"run_id": "m2_batch_01_small",      "member": "Samuel Mwania", "batch_size": 8},
+    "m2_batch_02_baseline":   {"run_id": "m2_batch_02_baseline",   "member": "Samuel Mwania", "batch_size": 32},
+    "m2_batch_03_mod":        {"run_id": "m2_batch_03_mod",        "member": "Samuel Mwania", "batch_size": 64},
+    "m2_batch_04_large":      {"run_id": "m2_batch_04_large",      "member": "Samuel Mwania", "batch_size": 128},
+    "m2_batch_05_verylarge":  {"run_id": "m2_batch_05_verylarge",  "member": "Samuel Mwania", "batch_size": 256},
 
     # --- Member 3: exploration schedule ----------------------------------
     "m3_eps_01_fastdecay":     {"run_id": "m3_eps_01_fastdecay",     "member": "Birasa",

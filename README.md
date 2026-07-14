@@ -117,7 +117,7 @@ The full list of all thirty runs, the reasoning behind each one, and predicted-v
 
 **Compute budget:** the 500k-timestep default × 33 runs does not fit in a Colab session. The sweep runs at a reduced `--total-timesteps 150000`, reserving the full 500k for the baseline and the final combined run. See the "Compute budget" section of [EXPERIMENTS.md](EXPERIMENTS.md) for the full breakdown.
 
-`member1`, `member2`, `Birasa` are placeholders in both the presets and the documentation. Replace them with actual names once the group assigns who owns which sweep, in `config.py` and in `EXPERIMENTS.md`.
+`member1` and `Birasa` are placeholders in both the presets and the documentation. Replace them with actual names once the group assigns who owns which sweep, in `config.py` and in `EXPERIMENTS.md`.
 
 Every run, regardless of whether it came from a preset or manual flags, appends one row to `experiments/experiment_log.csv` automatically.
 
@@ -131,7 +131,7 @@ Every run, regardless of whether it came from a preset or manual flags, appends 
 | Member | Scripts / components owned | Hyperparameter axis | Experiments run |
 |---|---|---|---|
 | member1 | | Learning rate | 10 |
-| member2 | | Gamma and batch size | 10 |
+| Samuel Mwania | | Gamma and batch size | 10 |
 | Birasa | | Exploration schedule | 10 |
 
-Replace `member1`/`member2`/`Birasa` with real names once assigned, in this table, in `config.py`, and in `EXPERIMENTS.md`.
+Replace `member1`/`Birasa` with real names once assigned, in this table, in `config.py`, and in `EXPERIMENTS.md`.
