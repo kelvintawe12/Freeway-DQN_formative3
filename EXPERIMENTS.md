@@ -147,21 +147,21 @@ done
 
 | Run ID | Gamma | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
-| m2_gamma_01_short | 0.90 | Short-sighted, may cross without waiting for a safe gap | | |
-| m2_gamma_02_shortmed | 0.95 | Still fairly reactive | | |
-| m2_gamma_03_baseline | 0.99 | Reference point, same as shared baseline's gamma | | |
-| m2_gamma_04_long | 0.995 | More patient, better gap prediction, possibly slower early learning | | |
-| m2_gamma_05_verylong | 0.999 | Very long horizon, watch for training instability from large target values | | |
+| m2_gamma_01_short | 0.90 | Short-sighted, may cross without waiting for a safe gap | 25k / 22.13 / 0.58 | Highest AUC across all gamma values. Short discount horizon did not hurt greedy reward (22.5) and produced the most stable late-training performance (std=0.58). The agent still learned to cross effectively despite heavy future-reward discounting. |
+| m2_gamma_02_shortmed | 0.95 | Still fairly reactive | 25k / 20.47 / 3.21 | Worst late-training stability of all gamma runs (std=3.21). Final reward dropped to 20.7 from best checkpoint of 22.5, indicating the policy oscillated after peaking. Moderate discount was less stable than either extreme. |
+| m2_gamma_03_baseline | 0.99 | Reference point, same as shared baseline's gamma | 25k / 20.68 / 1.92 | Solid performance. Best checkpoint matched top reward (22.5) and final weights held at 22.5. Late-training stability was moderate (std=1.92). Standard DQN gamma works reliably. |
+| m2_gamma_04_long | 0.995 | More patient, better gap prediction, possibly slower early learning | 25k / 21.42 / 0.79 | Second-highest AUC (21.42) and low late-training variance (0.79). The longer horizon produced stable, patient behavior. Final reward (21.9) was close to the best checkpoint (22.5), indicating steady convergence without oscillation. |
+| m2_gamma_05_verylong | 0.999 | Very long horizon, watch for training instability from large target values | 25k / 16.72 / 8.64 | Confirmed instability prediction. Final reward collapsed to 12.5 despite a best checkpoint of 22.5. Late-training std was extreme (8.64). The very long horizon made Q-value targets too large, causing the policy to diverge after initially learning. |
 
 ### Batch size
 
 | Run ID | Batch Size | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|
-| m2_batch_01_small | 8 | Noisy gradients, more updates per second, less stable | | |
-| m2_batch_02_baseline | 32 | Reference point, same as shared baseline's batch size | | |
-| m2_batch_03_mod | 64 | Smoother gradients, slightly slower per step | | |
-| m2_batch_04_large | 128 | Even smoother, more compute per update | | |
-| m2_batch_05_verylarge | 256 | Diminishing returns expected, mainly a wall-clock cost test | | |
+| m2_batch_01_small | 8 | Noisy gradients, more updates per second, less stable | 25k / 18.77 / 8.73 | Confirmed instability prediction. Best checkpoint reached 22.5 but final weights collapsed to 2.5 (near-random). Late-training std was extreme (8.73). High-variance gradients caused catastrophic forgetting after initial learning. |
+| m2_batch_02_baseline | 32 | Reference point, same as shared baseline's batch size | 25k / 20.68 / 1.92 | Reliable performance. Best and final rewards both 22.5. Moderate late-training variance (1.92). Standard batch size provides a good balance between gradient noise and compute cost. |
+| m2_batch_03_mod | 64 | Smoother gradients, slightly slower per step | 25k / 21.67 / 1.02 | Best AUC of all batch sizes (21.67) with low late-training variance (1.02). Smoother gradients improved sample efficiency without meaningful increase in wall-clock time (405s vs 403s for baseline). Best batch size overall. |
+| m2_batch_04_large | 128 | Even smoother, more compute per update | 50k / 17.73 / 0.55 | Slowest to reach threshold (50k steps vs 25k for smaller batches). Lowest late-training std (0.55) confirms stability, but reduced AUC (17.73) shows the agent learned more slowly within the fixed budget. Lower best reward (21.5). |
+| m2_batch_05_verylarge | 256 | Diminishing returns expected, mainly a wall-clock cost test | 50k / 19.05 / 0.44 | Most stable late-training (std=0.44) but slowest wall-clock time (498s, 24% slower than baseline). Reached threshold at 50k steps. Memory warning triggered (buffer > available RAM). Very stable but inefficient for fixed-budget training. |
 
 **Expected narrative:** Freeway specifically rewards patience, since waiting for a gap beats a rushed crossing, so gamma is not just a numeric tuning knob here, it maps onto a visible behavioral difference in the gameplay footage. Batch size is more of a stability-versus-compute tradeoff; note both final reward and wall-clock training time per run from `experiment_log.csv` when discussing it.
 

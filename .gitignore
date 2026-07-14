@@ -1,6 +1,6 @@
 # Runtime artifacts: populated by whichever machine trains the agent
 # (normally Colab), pulled down and committed deliberately, never by accident.
-models/*.zip
+# models/*.zip  -- uncommitted for assignment submission (zip policy required in repo)
 logs/
 plots/
 videos/
