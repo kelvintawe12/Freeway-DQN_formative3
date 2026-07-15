@@ -19,6 +19,7 @@ Freeway-DQN/
 ├── compare_policies.py      trains CnnPolicy and MlpPolicy under identical settings
 ├── requirements.txt
 ├── EXPERIMENTS.md            full 30-experiment plan: reasoning, predictions, fillable results
+├── M1_exploration.md         detailed M1 learning-rate report and best combined config
 ├── experiments/
 │   └── experiment_log.csv   one row per training run, appended automatically
 ├── notebooks/
@@ -115,7 +116,7 @@ Any explicit flag overrides the preset's value for that field, so a preset can s
 python train.py --preset m1_lr_02_verylow --total-timesteps 300000 --notes "shorter budget test"
 ```
 
-The full list of all thirty runs, the reasoning behind each one, and predicted-versus-actual behavior columns to fill in live in **[EXPERIMENTS.md](EXPERIMENTS.md)**. That document and the `PRESETS` dictionary in `config.py` must stay in sync; if a value changes in one, change it in the other. Run `python check_presets.py` to verify they still agree — it exits non-zero and prints the specific mismatch if they have drifted.
+The full list of all thirty runs, the reasoning behind each one, and predicted-versus-actual behavior columns to fill in live in **[EXPERIMENTS.md](EXPERIMENTS.md)**. A detailed M1 learning-rate report, including M2/M3 context and the current best combined configuration, is in **[M1_exploration.md](M1_exploration.md)**. That document and the `PRESETS` dictionary in `config.py` must stay in sync; if a value changes in one, change it in the other. Run `python check_presets.py` to verify they still agree — it exits non-zero and prints the specific mismatch if they have drifted.
 
 **Compute budget:** the 500k-timestep default × 33 runs does not fit in a Colab session. The sweep runs at a reduced `--total-timesteps 150000`, reserving the full 500k for the baseline and the final combined run. See the "Compute budget" section of [EXPERIMENTS.md](EXPERIMENTS.md) for the full breakdown.
 
