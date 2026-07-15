@@ -5,6 +5,7 @@ logs/
 plots/
 videos/
 results.zip
+m1_results.zip
 
 # The experiment log IS committed — it is a deliverable. Ignore only the
 # throwaway smoke-test / untrained rows' models above, not this file.
