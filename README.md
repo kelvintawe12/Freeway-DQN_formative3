@@ -168,7 +168,7 @@ The best hyperparameter from each axis was combined into one agent trained for 5
 
 The final trained agent playing Freeway with greedy action selection:
 
-https://github.com/user-attachments/assets/freeway_group_submission.mp4
+https://github.com/kelvintawe12/Freeway-DQN_formative3/raw/main/videos/freeway_group_submission-step-0-to-step-20000.mp4
 
 To generate locally:
 ```bash

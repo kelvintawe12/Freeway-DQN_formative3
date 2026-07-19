@@ -184,16 +184,16 @@ done
 
 | Run ID | Eps Start | Eps End | Decay Fraction | Predicted Behavior | Steps→18 / AUC / Late-std | Actual Observed Behavior |
 |---|---|---|---|---|---|---|
-| m3_eps_01_fastdecay | 1.0 | 0.05 | 0.02 | Exploits early, risks settling on a suboptimal policy before seeing enough traffic patterns | | |
-| m3_eps_02_baseline | 1.0 | 0.05 | 0.10 | Reference point, same as shared baseline's exploration schedule | | |
-| m3_eps_03_slowdecay | 1.0 | 0.05 | 0.30 | More exploration time, slower convergence, possibly better final policy | | |
-| m3_eps_04_veryslow | 1.0 | 0.05 | 0.50 | Spends half of training mostly exploring randomly | | |
-| m3_eps_05_highfloor | 1.0 | 0.20 | 0.10 | Never fully commits to the greedy policy, adds noise even late in training | | |
-| m3_eps_06_lowfloor | 1.0 | 0.01 | 0.10 | Nearly fully greedy late, minimal residual exploration | | |
-| m3_eps_07_zerofloor | 1.0 | 0.0 | 0.10 | No residual exploration at all; can get permanently stuck if a good strategy has not been found yet | | |
-| m3_eps_08_lowstart | 0.5 | 0.05 | 0.10 | Starts half-greedy from the beginning, less initial random data collected | | |
-| m3_eps_09_alwaysexplore | 1.0 | 0.30 | 0.50 | Heavy, sustained exploration, likely the weakest final performance, useful as a too-much-exploration example | | |
-| m3_eps_10_aggressive | 1.0 | 0.02 | 0.05 | Very fast commitment to exploitation, a sharp contrast case against the slow-decay runs | | |
+| m3_eps_01_fastdecay | 1.0 | 0.05 | 0.02 | Exploits early, risks settling on a suboptimal policy before seeing enough traffic patterns | 25k / 20.08 / 2.77 | Fast decay committed the agent early. Some late instability (std=2.77) but solid greedy reward (22.5). |
+| m3_eps_02_baseline | 1.0 | 0.05 | 0.10 | Reference point, same as shared baseline's exploration schedule | 25k / 21.07 / 1.76 | Baseline exploration schedule. Reliable AUC and moderate stability. |
+| m3_eps_03_slowdecay | 1.0 | 0.05 | 0.30 | More exploration time, slower convergence, possibly better final policy | 25k / 13.80 / 8.45 | Slow decay wasted training budget on random actions. AUC dropped sharply and late-training oscillated heavily. |
+| m3_eps_04_veryslow | 1.0 | 0.05 | 0.50 | Spends half of training mostly exploring randomly | 25k / 11.08 / 10.74 | Worst AUC of all 30 experiments. Agent never fully committed to exploitation, confirming excessive exploration harms performance. |
+| m3_eps_05_highfloor | 1.0 | 0.20 | 0.10 | Never fully commits to the greedy policy, adds noise even late in training | 25k / 22.22 / 0.46 | Best exploration config overall. High floor acted as implicit regularisation, producing the highest AUC (22.22) and lowest late-std (0.46). |
+| m3_eps_06_lowfloor | 1.0 | 0.01 | 0.10 | Nearly fully greedy late, minimal residual exploration | 25k / 20.43 / 1.33 | Slightly less stable than moderate floor. Near-zero residual exploration worked but offered no advantage over baseline. |
+| m3_eps_07_zerofloor | 1.0 | 0.0 | 0.10 | No residual exploration at all; can get permanently stuck if a good strategy has not been found yet | 25k / 20.87 / 2.33 | Pure greedy after annealing. Mild instability from overfitting to a narrow set of state-action pairs. |
+| m3_eps_08_lowstart | 0.5 | 0.05 | 0.10 | Starts half-greedy from the beginning, less initial random data collected | 25k / 19.85 / 3.75 | Lower initial epsilon reduced early exploration, slowing convergence and increasing late variance. |
+| m3_eps_09_alwaysexplore | 1.0 | 0.30 | 0.50 | Heavy, sustained exploration, likely the weakest final performance, useful as a too-much-exploration example | 25k / 18.82 / 1.97 | Permanent 30% randomness capped final performance. Useful negative example of over-exploration. |
+| m3_eps_10_aggressive | 1.0 | 0.02 | 0.05 | Very fast commitment to exploitation, a sharp contrast case against the slow-decay runs | 25k / 18.50 / 8.02 | Aggressive exploitation caused late-training oscillation (std=8.02). Fast decay + low floor is a risky combination. |
 
 **Expected narrative:** this axis is the clearest illustration of the exploration-exploitation tradeoff the rubric explicitly asks about. `m3_eps_07_zerofloor` and `m3_eps_09_alwaysexplore` are deliberately positioned as failure-mode examples on either end, keep them in the presentation even if they perform badly, a documented bad result is still evidence of understanding.
 
@@ -205,24 +205,23 @@ Once each member has identified their best-performing value, combine them into o
 
 ```bash
 python train.py --run-id final_combined --member team --promote \
-    --learning-rate <member 1's best value> \
-    --gamma <member 2's best gamma> \
-    --batch-size <member 2's best batch size> \
-    --exploration-final-eps <member 3's best eps end> \
-    --exploration-fraction <member 3's best decay fraction> \
+    --learning-rate 3e-4 \
+    --gamma 0.90 \
+    --batch-size 64 \
+    --exploration-final-eps 0.20 \
+    --exploration-fraction 0.10 \
+    --total-timesteps 500000 \
     --notes "combined best hyperparameters from all three members' independent sweeps"
 ```
 
-This run is not a preset, since its values depend on results that do not exist until the three sweeps above are complete. Fill in the placeholders once you know them.
-
 | Parameter | Best Value | From Member |
 |---|---|---|
-| learning_rate | | 1 |
-| gamma | | 2 |
-| batch_size | | 2 |
-| exploration_final_eps | | 3 |
-| exploration_fraction | | 3 |
-| Final mean reward | | |
+| learning_rate | 3e-4 | Kelvin Tawe |
+| gamma | 0.90 | Samuel Mwania |
+| batch_size | 64 | Samuel Mwania |
+| exploration_final_eps | 0.20 | Divine Birasa |
+| exploration_fraction | 0.10 | Divine Birasa |
+| Final mean reward | **22.5** (AUC=22.25, late_std=0.76) | Team |
 
 ---
 
