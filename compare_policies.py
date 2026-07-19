@@ -38,7 +38,7 @@ def train_one(policy: str, env_id: str, timesteps: int, seed: int, n_envs: int) 
     env = make_atari_env(env_id, n_envs=n_envs, seed=seed, monitor_dir=run_dir)
     env = VecFrameStack(env, n_stack=4)
 
-    model = DQN(policy, env, seed=seed, verbose=0)
+    model = DQN(policy, env, seed=seed, verbose=0, buffer_size=100000)
     model.learn(total_timesteps=timesteps, progress_bar=True)
 
     eval_env = make_atari_env(env_id, n_envs=1, seed=seed + 1000,

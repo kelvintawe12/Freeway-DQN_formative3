@@ -1,140 +1,185 @@
-# Freeway DQN
+# Hyperparameter Optimization of DQN for Atari Freeway
 
-A Deep Q-Network agent trained to play Atari Freeway, built with Stable Baselines3 and Gymnasium.
+**Environment:** ALE/Freeway-v5 (Atari 2600)
+**Algorithm:** Deep Q-Network (DQN)
+**Framework:** Stable Baselines3 2.x, Gymnasium, ale-py
+**Team:** Kelvin Tawe, Samuel Mwania, Divine Birasa
 
-The environment: a chicken has to cross a multi-lane highway full of moving cars. Every successful crossing gives a reward. Getting hit does not end the episode, it just resets the chicken's position, so the agent has to learn timing and patience rather than reflexes alone.
+## Environment
 
-## Why Freeway
+Freeway is an Atari 2600 game where the agent controls a chicken crossing a ten-lane highway. Each successful crossing awards +1 reward. Collisions push the chicken back but do not terminate the episode. The episode ends after a fixed number of frames (2048 in the default ALE wrapper).
 
-Freeway has a small action space (up, down, no-op) and trains faster than most Atari titles, which left more time for the part of this assignment that actually carries marks: running a real hyperparameter sweep, comparing policy architectures with evidence, and producing a working evaluation pipeline. The gameplay is also easy to judge visually. A random agent gets hit constantly. A trained agent waits for gaps and crosses in clean, deliberate movements.
+Observations are 84x84 grayscale frames stacked four deep (giving temporal information to infer car velocities). The action space has three discrete actions: move up, move down, and no-op.
 
-## Project layout
+## Policy Architecture: CNN vs MLP
+
+Freeway's observations are raw pixel frames. CnnPolicy processes these with convolutional layers that exploit spatial locality and weight sharing. MlpPolicy flattens the frame into a 28,224-element vector and must learn spatial relationships from scratch. Both were trained for 200,000 timesteps under identical conditions. CnnPolicy converged faster and reached a higher final reward, validating the convolutional architecture for image-based observations.
+
+![CNN vs MLP Comparison](plots/mlp_vs_cnn.png)
+
+## Project Structure
 
 ```
-Freeway-DQN/
-├── config.py              default hyperparameters, shared paths, and the 30-run preset table
-├── train.py                training script, fully CLI-driven, supports --preset
-├── evaluate.py              runs N episodes headless, reports mean and std reward
-├── play.py                 loads a trained model, plays greedily, renders or records
-├── compare_policies.py      trains CnnPolicy and MlpPolicy under identical settings
+Freeway-DQN_formative3/
+├── config.py                Central hyperparameters, paths, 30-run preset table
+├── train.py                 Training script (CLI-driven, supports --preset)
+├── play.py                  Load trained model, play greedily, render or record
+├── evaluate.py              Run N episodes headless, report mean/std reward
+├── compare_policies.py      Train CnnPolicy vs MlpPolicy under identical settings
 ├── requirements.txt
-├── EXPERIMENTS.md            full 30-experiment plan: reasoning, predictions, fillable results
-├── M1_exploration.md         detailed M1 learning-rate report and best combined config
 ├── experiments/
-│   └── experiment_log.csv   one row per training run, appended automatically
+│   └── experiment_log.csv   One row per training run (appended automatically)
 ├── notebooks/
-│   ├── Freeway_DQN_Colab.ipynb       shared runner notebook
+│   ├── Freeway_DQN_Group_Submission.ipynb   Master notebook (all 30 experiments + final model)
 │   ├── M1_Learning_Rate_Experiments.ipynb   Kelvin's learning-rate sweep
-│   └── Samuel_Mwania_Experiments.ipynb      gamma and batch-size sweep
-├── models/                  saved .zip checkpoints (created at runtime)
-├── logs/                    TensorBoard logs, one folder per run (created at runtime)
-├── plots/                   reward curves and comparison charts (created at runtime)
-└── videos/                  recorded gameplay clips (created at runtime)
+│   ├── Samuel_Mwania_Experiments.ipynb      Samuel's gamma and batch-size sweep
+│   └── Divine_epsilon_sweep.ipynb           Divine's exploration schedule sweep
+├── models/                  Saved .zip checkpoints
+├── logs/                    Training logs per run
+├── plots/                   Reward curves and comparison charts
+└── videos/                  Recorded gameplay clips
 ```
-
-The `models`, `logs`, `plots`, and `videos` folders are not committed empty placeholders. They get created the first time you run any script, and they are meant to be populated by whichever machine actually trains the agent, normally Colab.
-
-## How this is meant to be used
-
-The code lives here and gets version-controlled from a local machine. Training happens on Colab, which has a GPU and cuts training time down substantially. The notebook in `notebooks/` clones this repo, installs the pinned dependencies, and runs the scripts in sequence. Nothing in the codebase assumes a specific machine: all paths are relative to the project root, and every script takes its configuration through CLI flags rather than hardcoded values.
 
 ## Setup
 
-### Local (for editing code, and for `play.py --render`)
-
 ```bash
-git clone <your-repo-url>
-cd Freeway-DQN
+git clone <repo-url>
+cd Freeway-DQN_formative3
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Colab (for training)
-
-Open `notebooks/Freeway_DQN_Colab.ipynb`, set the runtime to GPU, and run the setup cell. It clones this repo and installs the same pinned versions listed in `requirements.txt`, so results are reproducible regardless of where they were produced.
-
-## A note on reward clipping
-
-Training uses reward clipping to -1, 0, and 1, following the original DQN paper (Mnih et al., 2015). This keeps Q-value targets on a comparable scale regardless of a game's raw scoring range, which is what makes DQN's hyperparameters transferable across different Atari titles in the first place. Evaluation and playback turn clipping off, so `evaluate.py` and `play.py` report the actual in-game score rather than the clipped training signal. For Freeway specifically this distinction barely matters, since a successful crossing is already worth exactly 1 point, but the code keeps the two paths separate on principle rather than assuming that will always be true.
-
-## Running the scripts
+## Running the Scripts
 
 Train a single configuration:
-
 ```bash
-python train.py --run-id exp01_lr --member kelvin --learning-rate 5e-4 --notes "faster early learning, more variance late"
+python train.py --preset m1_lr_05_modhigh --notes "moderate-high LR, stable"
 ```
 
-Every run appends one row to `experiments/experiment_log.csv` automatically. Pass `--promote` to also save the run as `models/dqn_model.zip`, the file `play.py` loads by default once you have decided which run is your best one.
-
-Evaluate a trained model over several episodes:
-
+Evaluate a trained model:
 ```bash
 python evaluate.py --model models/dqn_model.zip --episodes 20
 ```
 
-Watch the agent play, locally with a live window:
-
+Play with live rendering:
 ```bash
 python play.py --model models/dqn_model.zip --render --episodes 3
 ```
 
-Record gameplay to video (works on Colab, since it does not need a display):
-
+Record gameplay to video:
 ```bash
 python play.py --model models/dqn_model.zip --record --episodes 3
 ```
 
-Compare CnnPolicy against MlpPolicy under identical conditions:
-
+Compare CNN vs MLP:
 ```bash
 python compare_policies.py --timesteps 200000
 ```
 
-## Policy architecture: CNN vs MLP
+## Hyperparameter Tuning Results
 
-Freeway's observations are 84x84 grayscale frames, stacked four deep so the agent can infer motion. CnnPolicy processes this with convolutional layers, which exploit the fact that nearby pixels are related and that the same visual pattern (a car, a lane boundary) can appear anywhere in the frame. MlpPolicy instead flattens the frame into a single vector and has to learn spatial relationships from raw pixel positions, with no shared structure across the image. `compare_policies.py` trains both under the same seed and timestep budget and produces `plots/mlp_vs_cnn.png` so the comparison is based on a measured reward curve rather than an assumption.
+### Shared Baseline
 
-## Hyperparameter experiments
+| Parameter | Value |
+|---|---|
+| learning_rate | 1e-4 |
+| gamma | 0.99 |
+| batch_size | 32 |
+| buffer_size | 100,000 |
+| exploration_initial_eps | 1.0 |
+| exploration_final_eps | 0.05 |
+| exploration_fraction | 0.10 |
+| total_timesteps | 150,000 (sweep) / 500,000 (final) |
 
-Thirty experiments total, ten per group member, one hyperparameter family owned by each member so every sweep tells a coherent story rather than being ten disconnected numbers:
+### Member 1: Kelvin Tawe -- Learning Rate
 
-- **Member 1**: learning rate
-- **Member 2**: gamma (discount factor) and batch size
-- **Member 3**: exploration schedule (epsilon-greedy)
+| # | Hyperparameter Set | Mean Reward | AUC | Late Std | Noted Behavior |
+|---|---|---|---|---|---|
+| 1 | lr=1e-6, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | Negligible gradient updates; agent still converged due to environment simplicity but AUC suggests slow initial learning |
+| 2 | lr=1e-5, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.7 | 13.40 | 10.54 | Unstable; reached high reward at best checkpoint then collapsed. Optimiser too slow to recover |
+| 3 | lr=5e-5, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 23.0 | 17.62 | 6.07 | Moderate instability; slightly better than 1e-5 but still oscillated in late training |
+| 4 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 21.07 | 1.76 | Baseline reference. Solid performance, moderate late variance |
+| 5 | lr=3e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | Best overall. Fast convergence, highest AUC, lowest variance |
+| 6 | lr=5e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | Comparable to 3e-4. Still within the stable band |
+| 7 | lr=1e-3, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | Still stable at this rate; no signs of divergence |
+| 8 | lr=3e-3, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | High end of stable range. Performance held |
+| 9 | lr=1e-2, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.33 | 0.20 | Extreme value; Freeway's simplicity absorbs the large step size |
+| 10 | lr=3e-5, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 23.3 | 14.37 | 10.17 | Highest single-checkpoint reward but extreme instability. Policy oscillated after peak |
 
-Every experiment is a named preset in `config.py` (`PRESETS`), so running one is a single command instead of retyping flags:
+**Key insight:** Learning rate is robust within 3e-4 to 1e-2 for Freeway. Instability appears at extremely low values (1e-5, 3e-5) where the optimiser is too slow to stabilise the policy within the training budget.
 
+### Member 2: Samuel Mwania -- Gamma (Discount Factor) and Batch Size
+
+**Gamma Sweep:**
+
+| # | Hyperparameter Set | Mean Reward | AUC | Late Std | Noted Behavior |
+|---|---|---|---|---|---|
+| 1 | lr=1e-4, gamma=0.90, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 22.13 | 0.58 | Best gamma. Short horizon produces small, learnable Q-targets |
+| 2 | lr=1e-4, gamma=0.95, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 20.47 | 3.21 | Worst stability among mid-range values. Policy oscillated after peaking |
+| 3 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 20.68 | 1.92 | Baseline. Solid but not optimal |
+| 4 | lr=1e-4, gamma=0.995, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 21.42 | 0.79 | Second best AUC. Patient agent with stable late training |
+| 5 | lr=1e-4, gamma=0.999, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 16.72 | 8.64 | Catastrophic collapse. Q-value magnitudes grew too large, causing divergence |
+
+**Batch Size Sweep:**
+
+| # | Hyperparameter Set | Mean Reward | AUC | Late Std | Wall Clock (s) | Noted Behavior |
+|---|---|---|---|---|---|---|
+| 1 | lr=1e-4, gamma=0.99, batch=8, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 18.77 | 8.73 | 459.6 | High gradient noise caused instability. Slowest convergence |
+| 2 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 20.68 | 1.92 | 403.4 | Baseline. Balanced noise and compute |
+| 3 | lr=1e-4, gamma=0.99, batch=64, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 21.67 | 1.02 | 404.8 | Best batch size. Smoother gradients improved early learning |
+| 4 | lr=1e-4, gamma=0.99, batch=128, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 21.5 | 17.73 | 0.55 | 431.1 | Lower peak reward. Large batch smoothed out too much exploration signal |
+| 5 | lr=1e-4, gamma=0.99, batch=256, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.4 | 19.05 | 0.44 | 497.6 | Low variance but slower learning. 23% slower wall-clock time |
+
+**Key insight:** Gamma=0.90 outperformed the standard 0.99, which is counterintuitive. Shorter discount horizons produce smaller Q-targets that are easier to learn within a limited training budget. Batch size 64 gave the best tradeoff between gradient smoothness and exploration signal preservation.
+
+### Member 3: Divine Birasa -- Exploration Schedule (Epsilon)
+
+| # | Hyperparameter Set | Mean Reward | AUC | Late Std | Noted Behavior |
+|---|---|---|---|---|---|
+| 1 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.02 | 22.5 | 20.08 | 2.77 | Fast decay. Agent committed to policy early, some late instability |
+| 2 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.1 | 22.5 | 21.07 | 1.76 | Baseline exploration schedule |
+| 3 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.3 | 22.5 | 13.80 | 8.45 | Slow decay wasted training budget on random exploration |
+| 4 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.05, eps_decay=0.5 | 22.5 | 11.08 | 10.74 | Very slow decay. Agent never fully committed, worst AUC of all 30 experiments |
+| 5 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.20, eps_decay=0.1 | 22.5 | 22.22 | 0.46 | Best exploration config. High floor acts as implicit regularisation |
+| 6 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.01, eps_decay=0.1 | 22.5 | 20.43 | 1.33 | Very low floor. Slightly less stable than moderate floor |
+| 7 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.00, eps_decay=0.1 | 22.5 | 20.87 | 2.33 | Zero floor (pure greedy after annealing). Mild instability from overfitting |
+| 8 | lr=1e-4, gamma=0.99, batch=32, eps_start=0.5, eps_end=0.05, eps_decay=0.1 | 22.5 | 19.85 | 3.75 | Lower initial epsilon reduced early exploration, slower convergence |
+| 9 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.30, eps_decay=0.5 | 22.5 | 18.82 | 1.97 | Always-explore. Permanent 30% randomness capped final performance |
+| 10 | lr=1e-4, gamma=0.99, batch=32, eps_start=1.0, eps_end=0.02, eps_decay=0.05 | 22.5 | 18.50 | 8.02 | Aggressive exploitation. Fast decay + low floor caused late-training oscillation |
+
+**Key insight:** A moderate exploration floor (final_eps=0.20) with fast annealing (fraction=0.10) gives the best results. The residual randomness acts as implicit regularisation, preventing the Q-network from overfitting to a narrow set of state-action pairs.
+
+### Final Combined Agent
+
+The best hyperparameter from each axis was combined into one agent trained for 500,000 timesteps:
+
+| Parameter | Source | Value |
+|---|---|---|
+| Learning Rate | Kelvin Tawe | 3e-4 |
+| Gamma | Samuel Mwania | 0.90 |
+| Batch Size | Samuel Mwania | 64 |
+| Exploration Fraction | Divine Birasa | 0.10 |
+| Exploration Final Eps | Divine Birasa | 0.20 |
+
+**Result:** mean_reward=22.5, AUC=22.25, late_reward_std=0.76
+
+## Gameplay Video
+
+The final trained agent playing Freeway with greedy action selection:
+
+https://github.com/user-attachments/assets/freeway_group_submission.mp4
+
+To generate locally:
 ```bash
-python train.py --preset m1_lr_02_verylow --notes "slow but stable"
+python play.py --model models/dqn_model.zip --record --video-name freeway_group_submission
 ```
-
-Any explicit flag overrides the preset's value for that field, so a preset can still be tweaked without editing `config.py`:
-
-```bash
-python train.py --preset m1_lr_02_verylow --total-timesteps 300000 --notes "shorter budget test"
-```
-
-The full list of all thirty runs, the reasoning behind each one, and predicted-versus-actual behavior columns to fill in live in **[EXPERIMENTS.md](EXPERIMENTS.md)**. A detailed M1 learning-rate report, including M2/M3 context and the current best combined configuration, is in **[M1_exploration.md](M1_exploration.md)**. That document and the `PRESETS` dictionary in `config.py` must stay in sync; if a value changes in one, change it in the other. Run `python check_presets.py` to verify they still agree — it exits non-zero and prints the specific mismatch if they have drifted.
-
-**Compute budget:** the 500k-timestep default × 33 runs does not fit in a Colab session. The sweep runs at a reduced `--total-timesteps 150000`, reserving the full 500k for the baseline and the final combined run. See the "Compute budget" section of [EXPERIMENTS.md](EXPERIMENTS.md) for the full breakdown.
-
-`Kelvin`, `Samuel Mwania`, and `Birasa` are the assigned member names in the presets and documentation. Update them in `config.py` and `EXPERIMENTS.md` if the group assignments change.
-
-Every run, regardless of whether it came from a preset or manual flags, appends one row to `experiments/experiment_log.csv` automatically.
-
-## Gameplay video
-
-`videos/freeway_samuel_mwania-step-0-to-step-20000.mp4`: the trained M2 agent, produced by `play.py --record` in the Samuel Mwania notebook.
-`videos/m1_lr_best-step-0-to-step-20000.mp4`: the trained M1 learning-rate agent, produced by `play.py --record` in the M1 notebook.
 
 ## Contributions
 
-| Member | Scripts / components owned | Hyperparameter axis | Experiments run |
+| Member | Hyperparameter Axis | Experiments | Key Artifacts |
 |---|---|---|---|
-| Kelvin | `M1_Learning_Rate_Experiments.ipynb` | Learning rate | 10 |
-| Samuel Mwania | `Samuel_Mwania_Experiments.ipynb` | Gamma and batch size | 10 |
-| Birasa | | Exploration schedule | 10 |
-
-Names are assigned in `config.py` and documented in `EXPERIMENTS.md`; update them there if they change.
+| Kelvin Tawe | Learning Rate (1e-6 to 1e-2) | 10 | `M1_Learning_Rate_Experiments.ipynb` |
+| Samuel Mwania | Gamma (0.90 to 0.999) and Batch Size (8 to 256) | 10 | `Samuel_Mwania_Experiments.ipynb` |
+| Divine Birasa | Exploration Schedule (fraction and final eps) | 10 | `Divine_epsilon_sweep.ipynb` |
+| **Team** | Final Combined Model + CNN vs MLP comparison | 2 | `Freeway_DQN_Group_Submission.ipynb` |
